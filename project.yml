@@ -1,0 +1,44 @@
+name: ImageCache
+
+options:
+  bundleIdPrefix: dev.jano.imagecache
+  usesTabs: false
+  indentWidth: 4
+  tabWidth: 4
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: 15.4
+
+settings:
+    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: YES
+
+targets:
+
+  ImageCache:
+    type: framework
+    platform: iOS
+    scheme:
+      testTargets:
+         - ImageCacheTests
+    settings:
+       CURRENT_PROJECT_VERSION: 1
+       INFOPLIST_FILE: targets/main/Info.plist
+       IPHONEOS_DEPLOYMENT_TARGET: 15.4
+       PRODUCT_BUNDLE_IDENTIFIER: dev.jano.imagecache
+       PRODUCT_NAME: ImageCache
+    sources: 
+       - sources/main
+    type: framework
+
+  ImageCacheTests:
+    type: bundle.unit-test
+    platform: iOS
+    settings:
+      INFOPLIST_FILE: targets/tests/Info.plist
+      IPHONEOS_DEPLOYMENT_TARGET: 15.4
+      PRODUCT_BUNDLE_IDENTIFIER: dev.jano.imagecache.tests
+      TEST_HOST:
+    sources:
+      - sources/tests
+    dependencies:
+      - target: ImageCache
