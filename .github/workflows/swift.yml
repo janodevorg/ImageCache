@@ -30,4 +30,4 @@ jobs:
       - name: Build
         run: |
           swift package generate-xcodeproj
-          xcodebuild build -destination 'name=iPhone 13' -scheme 'Keychain-Package'
+          xcodebuild test -destination 'name=iPhone 13' -scheme 'ImageCache-Package'
