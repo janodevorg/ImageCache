@@ -1,5 +1,9 @@
 import os
-@preconcurrency import UIKit
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// Errors thrown by the `ImageDownloader`.
 public enum FetchError: Error {
@@ -31,7 +35,7 @@ public actor ImageDownloader
       - Returns: Image or nil if downloading failed.
       - Throws FetchError
     */
-    public func image(from urlString: String) async throws -> UIImage? {
+    public func image(from urlString: String) async throws -> PlatformImage? {
         guard let url = URL(string: urlString) else {
             throw FetchError.badURL
         }
@@ -47,7 +51,7 @@ public actor ImageDownloader
       - Returns: Image or nil if downloading failed.
       - Throws: FetchError
     */
-    public func image(from url: URL) async throws -> UIImage? {
+    public func image(from url: URL) async throws -> PlatformImage? {
 
         if let cached = cache.read(url: url) {
             // the cache contains images either downloaded or in progress
@@ -83,13 +87,13 @@ public actor ImageDownloader
        - Returns: image
        - Throws: FetchError
      */
-    private func downloadImage(from url: URL) async throws -> UIImage {
+    private func downloadImage(from url: URL) async throws -> PlatformImage {
         let request = URLRequest(url: url)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             throw FetchError.badResponse
         }
-        guard let image = UIImage(data: data) else {
+        guard let image = PlatformImage(data: data) else {
             throw FetchError.badImage
         }
         return image

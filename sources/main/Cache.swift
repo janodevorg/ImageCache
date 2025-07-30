@@ -1,4 +1,8 @@
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// An API to store transient images based upon URL values.
 ///
@@ -9,10 +13,10 @@ public final class Cache
     public enum Entry {
 
         /// Download in progress.
-        case inProgress(Task<UIImage, Error>)
+        case inProgress(Task<PlatformImage, Error>)
 
         /// Image stored in the cache.
-        case ready(UIImage)
+        case ready(PlatformImage)
     }
 
     // NSObject wrapper for an entry so it can be used with NSCache.
@@ -54,7 +58,7 @@ public final class Cache
      Obtain the entry previously stored under the given `url`.
      - Parameter url: the key of the instance to obtain
      */
-    public func peek(url: URL) -> UIImage? {
+    public func peek(url: URL) -> PlatformImage? {
         if case let .ready(image) = cache.object(forKey: url as NSURL)?.entry {
             return image
         } else {

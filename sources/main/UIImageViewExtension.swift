@@ -1,6 +1,8 @@
-@preconcurrency import Foundation
+import Foundation
 import os
-@preconcurrency import UIKit
+
+#if canImport(UIKit)
+import UIKit
 
 public enum SetImageOptions {
 
@@ -15,7 +17,7 @@ public enum SetImageOptions {
 }
 
 /// Remote image caching functionality.
-public final class UIImageViewExtension
+@MainActor public final class UIImageViewExtension
 {
     private var log = Logger(subsystem: "dev.jano", category: "kit")
 
@@ -34,34 +36,41 @@ public final class UIImageViewExtension
      */
     public func setImage(url: URL, options: [SetImageOptions]) {
         Task {
-            guard var image = try await imageDownloader.image(from: url) else {
-                return
-            }
-            var onSuccess: @MainActor () -> Void = {}
-            for option in options {
-                switch option {
-                case .discardUnless(let condition):
-                    if !condition() {
-                        log.trace("Discarded")
-                        return
-                    }
-                case .resize(let newSize):
-                    image = await resize(image: image, newSize: newSize)
-                case .onSuccess(let action): 
-                    onSuccess = action
+            do {
+                guard var image = try await imageDownloader.image(from: url) else {
+                    return
                 }
-            }
-            
-            let decodedImage = await image.byPreparingForDisplay()
-            await MainActor.run { [decodedImage, onSuccess] in
-                base.image = decodedImage
-                onSuccess()
+
+                var onSuccess: @MainActor () -> Void = {}
+
+                await Task.detached {
+                    for option in options {
+                        switch option {
+                        case .discardUnless(let condition):
+                            if !condition() {
+                                return
+                            }
+                        case .resize(let newSize):
+                            image = await self.resize(image: image, newSize: newSize)
+                        case .onSuccess(let action):
+                            onSuccess = action
+                        }
+                    }
+
+                    let decodedImage = await image.byPreparingForDisplay()
+                    await MainActor.run {
+                        self.base.image = decodedImage
+                        onSuccess()
+                    }
+                }.value
+            } catch {
+                log.error("Failed to set image: \(error.localizedDescription)")
             }
         }
     }
 
     // - Returns: image resized to a newSize.
-    private func resize(image: UIImage, newSize: CGSize) async -> UIImage {
+    private func resize(image: PlatformImage, newSize: CGSize) async -> PlatformImage {
         guard image.size != newSize else {
             return image
         }
@@ -82,3 +91,5 @@ public extension UIImageView {
         UIImageViewExtension(self)
     }
 }
+
+#endif
