@@ -5,6 +5,12 @@ import UIKit
 import AppKit
 #endif
 
+/// Protocol for image downloading functionality
+public protocol ImageDownloading: Actor, Sendable {
+    func image(from urlString: String) async throws -> PlatformImage?
+    func image(from url: URL) async throws -> PlatformImage?
+}
+
 /// Errors thrown by the `ImageDownloader`.
 public enum FetchError: Error {
     case badResponse
@@ -18,13 +24,18 @@ public enum FetchError: Error {
  This is an actor so only one request is alive at a time, even when
  there can be many ongoing but suspended at the suspension points (await).
 */
-public actor ImageDownloader
+public actor ImageDownloader: ImageDownloading
 {
     private let log = Logger(subsystem: "dev.jano", category: "ImageDownloader")
     public static let shared = ImageDownloader()
 
     // Transient store for images.
     private let cache = Cache()
+    private let urlSession: URLSession
+
+    public init(urlSession: URLSession = .shared) {
+        self.urlSession = urlSession
+    }
 
     /**
      Download an image available at the given URL.
@@ -89,7 +100,7 @@ public actor ImageDownloader
      */
     private func downloadImage(from url: URL) async throws -> PlatformImage {
         let request = URLRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             throw FetchError.badResponse
         }

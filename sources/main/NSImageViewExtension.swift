@@ -1,15 +1,15 @@
-#if canImport(UIKit)
-import UIKit
+#if canImport(AppKit)
+import AppKit
 import os
 
 /// Remote image caching functionality.
-@MainActor public final class UIImageViewExtension
+@MainActor public final class NSImageViewExtension
 {
     private var log = Logger(subsystem: "dev.jano", category: "kit")
     private let imageProcessor: ImageProcessor
-    private let base: UIImageView
+    private let base: NSImageView
 
-    public init(_ base: UIImageView) {
+    public init(_ base: NSImageView) {
         self.base = base
         self.imageProcessor = ImageProcessor()
     }
@@ -36,11 +36,11 @@ import os
     }
 }
 
-/// Extends an UIImageView with a namespace that provides memory cache functionality.
-public extension UIImageView {
+/// Extends an NSImageView with a namespace that provides memory cache functionality.
+public extension NSImageView {
     /// Namespace for cache functionality.
-    var ext: UIImageViewExtension {
-        UIImageViewExtension(self)
+    var ext: NSImageViewExtension {
+        NSImageViewExtension(self)
     }
 }
 #endif
