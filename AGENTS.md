@@ -49,6 +49,7 @@ Quick pointers
 - macOS pre-decode + aspect-fit thumbnail: `Sources/Main/PlatformImage.swift`
 - Downloader (2xx + MIME checks, payload, costs): `Sources/Main/ImageDownloader.swift`
 - Options (`.resize`, `.contentMode`, `.onSuccess`): `Sources/Main/SetImageOptions.swift`
+- SwiftUI adapter (optional): `Sources/Main/SwiftUIAdapter.swift`
 
 Related article:
 - https://macguru.dev/fast-thumbnails-with-cgimagesource/

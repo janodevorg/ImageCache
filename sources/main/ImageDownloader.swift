@@ -85,7 +85,7 @@ public actor ImageDownloader: ImageDownloading
         let handle = Task { [urlSession] () throws -> ImagePayload in
             try Task.checkCancellation()
             let (payload, cost) = try await downloadImage(from: url, urlSession: urlSession)
-            await self.setCost(cost, for: url)
+            self.setCost(cost, for: url)
             return payload
         }
         cache.add(entry: .inProgress(handle), url: url)
