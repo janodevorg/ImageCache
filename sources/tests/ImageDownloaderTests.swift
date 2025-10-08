@@ -56,8 +56,11 @@ final class ImageDownloaderTests {
             return (response, mockImageData)
         }
 
-        let image = try await imageDownloader.image(from: url)
-        #expect(image != nil)
+        let payload = try await imageDownloader.image(from: url)
+        #expect(payload != nil)
+        #expect(payload?.image != nil)
+        // For small images, data is kept
+        #expect(payload?.data != nil)
     }
 
     @Test("Fail on bad HTTP response")
@@ -122,4 +125,3 @@ class MockURLProtocol: URLProtocol {
 
     override func stopLoading() {}
 }
-

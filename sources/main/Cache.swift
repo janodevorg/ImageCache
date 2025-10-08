@@ -1,3 +1,4 @@
+import os
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -13,23 +14,32 @@ public final class Cache
     public enum Entry {
 
         /// Download in progress.
-        case inProgress(Task<PlatformImage, Error>)
+        case inProgress(Task<ImagePayload, Error>)
 
         /// Image stored in the cache.
-        case ready(PlatformImage)
+        case ready(ImagePayload)
     }
 
     // NSObject wrapper for an entry so it can be used with NSCache.
-    private final class CacheEntry: NSObject {
+    final class CacheEntry: NSObject {
         let entry: Entry
         init(entry: Entry) {
             self.entry = entry
         }
     }
 
+    private let log = Logger(subsystem: "dev.jano", category: "Cache")
     private var cache = NSCache<NSURL, CacheEntry>()
+    private let delegate = Delegate()
 
-    public init() {}
+    public init(countLimit: Int = 200, totalCostLimit: Int = 64 * 1024 * 1024) {
+        cache.countLimit = countLimit
+        cache.totalCostLimit = totalCostLimit
+        delegate.onEvict = { [weak self] evicted in
+            self?.log.debug("Evicting cached image entry: \(String(describing: evicted))")
+        }
+        cache.delegate = delegate
+    }
     
     /// - Returns: value previously stored under the given `url`
     public func read(url: URL) -> Entry? {
@@ -39,11 +49,12 @@ public final class Cache
     /**
      Store an entry using a URL as key.
      - Parameters:
-       - Parameter entry: instance to store
-       - Parameter url: the key to later obtain the instance stored
+       - entry: instance to store
+       - url: the key to later obtain the instance stored
+       - cost: cache eviction cost (in bytes when known)
      */
-    public func add(entry: Entry, url: URL) {
-        cache.setObject(CacheEntry(entry: entry), forKey: url as NSURL)
+    public func add(entry: Entry, url: URL, cost: Int = 1) {
+        cache.setObject(CacheEntry(entry: entry), forKey: url as NSURL, cost: cost)
     }
 
     /**
@@ -59,10 +70,21 @@ public final class Cache
      - Parameter url: the key of the instance to obtain
      */
     public func peek(url: URL) -> PlatformImage? {
-        if case let .ready(image) = cache.object(forKey: url as NSURL)?.entry {
-            return image
+        if case let .ready(payload) = cache.object(forKey: url as NSURL)?.entry {
+            return payload.image
         } else {
             return nil
+        }
+    }
+}
+
+// MARK: - NSCache delegate
+
+private final class Delegate: NSObject, NSCacheDelegate {
+    var onEvict: ((AnyObject) -> Void)?
+    func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: Any) {
+        if let object = obj as AnyObject? {
+            onEvict?(object)
         }
     }
 }

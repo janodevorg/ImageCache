@@ -3,7 +3,6 @@ import Testing
 import Foundation
 
 @Suite("ImageProcessor Tests")
-@MainActor
 final class ImageProcessorTests {
 
     private let mockImageDownloader = MockImageDownloader()
@@ -16,7 +15,7 @@ final class ImageProcessorTests {
     @Test("Prepare image successfully")
     func testPrepareImageSuccess() async throws {
         let image = PlatformImage()
-        await mockImageDownloader.setImage(image)
+        await mockImageDownloader.setImage(ImagePayload(image: image, data: Data()))
         let imageProcessor = createImageProcessor()
 
         let (preparedImage, _) = try await imageProcessor.prepareImage(from: url, options: [])
@@ -26,7 +25,7 @@ final class ImageProcessorTests {
     @Test("Prepare image with resize option")
     func testPrepareImageWithResize() async throws {
         let image = PlatformImage()
-        await mockImageDownloader.setImage(image)
+        await mockImageDownloader.setImage(ImagePayload(image: image, data: Data()))
         let imageProcessor = createImageProcessor()
         let newSize = CGSize(width: 50, height: 50)
 
@@ -37,7 +36,7 @@ final class ImageProcessorTests {
     @Test("Prepare image with discard condition")
     func testPrepareImageDiscarded() async {
         let image = PlatformImage()
-        await mockImageDownloader.setImage(image)
+        await mockImageDownloader.setImage(ImagePayload(image: image, data: Data()))
         let imageProcessor = createImageProcessor()
 
         await #expect(throws: SetImageError.self) {
@@ -48,49 +47,49 @@ final class ImageProcessorTests {
     @Test("Prepare image with success action")
     func testPrepareImageOnSuccess() async throws {
         let image = PlatformImage()
-        await mockImageDownloader.setImage(image)
+        await mockImageDownloader.setImage(ImagePayload(image: image, data: Data()))
         let imageProcessor = createImageProcessor()
         
-        var wasOnSuccessCalled = false
+        @MainActor final class MainFlag { var value = false }
+        let flag = MainFlag()
         let (_, onSuccess) = try await imageProcessor.prepareImage(from: url, options: [.onSuccess(action: {
-            wasOnSuccessCalled = true
+            flag.value = true
         })])
         
         await MainActor.run {
             onSuccess()
+            #expect(flag.value)
         }
-        
-        #expect(wasOnSuccessCalled)
     }
 }
 
 // MARK: - Mock ImageDownloader
 
 actor MockImageDownloader: ImageDownloading {
-    private var mockImage: PlatformImage?
+    private var mockPayload: ImagePayload?
     private var mockError: Error?
 
-    func setImage(_ image: PlatformImage?) {
-        mockImage = image
+    func setImage(_ payload: ImagePayload?) {
+        mockPayload = payload
         mockError = nil
     }
     
     func setError(_ error: Error?) {
         mockError = error
-        mockImage = nil
+        mockPayload = nil
     }
 
-    func image(from url: URL) async throws -> PlatformImage? {
+    func image(from url: URL) async throws -> ImagePayload? {
         if let error = mockError {
             throw error
         }
-        return mockImage
+        return mockPayload
     }
     
-    func image(from urlString: String) async throws -> PlatformImage? {
+    func image(from urlString: String) async throws -> ImagePayload? {
         if let error = mockError {
             throw error
         }
-        return mockImage
+        return mockPayload
     }
 }
