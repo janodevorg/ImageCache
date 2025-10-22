@@ -92,7 +92,7 @@ public struct RemoteImage: View {
             }
         }
         .task(id: url) {
-            await loader.load(url: url, resize: resize, contentMode: contentMode)
+            loader.load(url: url, resize: resize, contentMode: contentMode)
         }
         .onDisappear {
             Task { @MainActor in loader.cancel() }

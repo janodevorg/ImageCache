@@ -20,7 +20,7 @@ public final class ImageProcessor {
     }
 
     public func prepareImage(from url: URL, options: [SetImageOptions]) async throws -> (PlatformImage, @MainActor () -> Void) {
-        guard var payload = try await imageDownloader.image(from: url) else {
+        guard let payload = try await imageDownloader.image(from: url) else {
             throw FetchError.badImage
         }
 
