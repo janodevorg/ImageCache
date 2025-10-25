@@ -26,7 +26,6 @@ public enum FetchError: Error {
 */
 public actor ImageDownloader: ImageDownloading
 {
-    private let log = Logger(subsystem: "dev.jano", category: "ImageDownloader")
     public static let shared = ImageDownloader()
 
     // Transient store for images.
